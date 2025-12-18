@@ -35,17 +35,19 @@ const OwnershipHistory = dynamic(() => import('@/components/nft/OwnershipHistory
 const MakeOfferModal = dynamic(() => import('@/components/nft/MakeOfferModal').then(mod => ({ default: mod.MakeOfferModal })), {
   ssr: false,
 });
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNFTDetails, useAuctions } from '@/hooks/useSubgraph';
 import { useNFTOwner } from '@/hooks/useNFT';
 import { MARKET_ADDRESS } from '@/lib/contracts';
 import Link from 'next/link';
+import { OffersListRef } from '@/components/nft/OffersList';
 
 export default function NFTDetailPage() {
   const params = useParams();
   const { address } = useAccount();
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const offersListRef = useRef<OffersListRef>(null);
 
   const collectionAddress = params.collection as string;
   const tokenId = params.tokenId as string;
@@ -260,7 +262,7 @@ export default function NFTDetailPage() {
         {/* Active Offers Section (if listed) */}
         {pair && isListed && (
           <div className="mb-8">
-            <OffersList pairId={BigInt(pair.id)} isOwner={!!isOwner} />
+            <OffersList ref={offersListRef} pairId={BigInt(pair.id)} isOwner={!!isOwner} />
           </div>
         )}
 
@@ -377,6 +379,14 @@ export default function NFTDetailPage() {
             pairId={BigInt(pair.id)}
             currentPrice={currentPrice}
             onClose={() => setShowOfferModal(false)}
+            onOfferSuccess={() => {
+              // Refetch offers multiple times to catch subgraph indexing
+              // Subgraph indexing can take a few seconds
+              setTimeout(() => offersListRef.current?.refetch(), 2000);
+              setTimeout(() => offersListRef.current?.refetch(), 4000);
+              setTimeout(() => offersListRef.current?.refetch(), 6000);
+              setTimeout(() => offersListRef.current?.refetch(), 10000);
+            }}
           />
         )}
       </div>

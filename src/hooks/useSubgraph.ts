@@ -152,8 +152,9 @@ export function useOffers(variables?: {
 export function usePairOffers(pairId: bigint) {
   return useQuery(GET_PAIR_OFFERS, {
     variables: { pairId: pairId.toString() },
-    pollInterval: 120000, // Poll every 2 minutes
+    pollInterval: 30000, // Poll every 30 seconds for faster updates
     errorPolicy: 'all',
+    fetchPolicy: 'cache-and-network', // Always fetch fresh data
   });
 }
 

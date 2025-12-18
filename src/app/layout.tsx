@@ -30,6 +30,8 @@ export default function RootLayout({
         {/* Performance: Preconnect to external domains */}
         <link rel="preconnect" href="https://api.thegraph.com" />
         <link rel="dns-prefetch" href="https://api.thegraph.com" />
+        <link rel="preconnect" href="https://api.studio.thegraph.com" />
+        <link rel="dns-prefetch" href="https://api.studio.thegraph.com" />
         <link rel="preconnect" href="https://ipfs.io" />
         <link rel="dns-prefetch" href="https://ipfs.io" />
         <link rel="preconnect" href="https://gateway.pinata.cloud" />
@@ -38,6 +40,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://gateway.lighthouse.storage" />
         <link rel="preconnect" href="https://api.web3modal.org" />
         <link rel="dns-prefetch" href="https://api.web3modal.org" />
+        <link rel="preconnect" href="https://api.avax.network" />
+        <link rel="dns-prefetch" href="https://api.avax.network" />
       </head>
       <body className="font-sans">
         <ErrorBoundary>

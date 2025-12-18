@@ -3,7 +3,7 @@
 import { useAccount } from 'wagmi';
 import { Address, formatEther } from 'viem';
 import { useBuyNFT, useListNFT, useDelist, useUpdatePrice } from '@/hooks/useMarketplace';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApproveTGR, useTGRBalance } from '@/hooks/useMarketplace';
 import { MARKET_ADDRESS } from '@/lib/contracts';
 import { parseEther } from 'viem';
@@ -62,15 +62,23 @@ export function ActionButtons({
   const [listStep, setListStep] = useState<'approve' | 'list' | 'idle'>('idle');
   const [buyStep, setBuyStep] = useState<'approve' | 'buy' | 'idle'>('idle');
 
+  // Use refs to track if we've already shown notifications (prevent duplicates)
+  const buyNotificationShown = useRef(false);
+  const listNotificationShown = useRef(false);
+  const delistNotificationShown = useRef(false);
+  const updatePriceNotificationShown = useRef(false);
+
   // Check if any operation is in progress (exclude modal states)
   const isAnyOperationPending = isBuying || isBuyingConfirming || isListing || isListingConfirming || 
     isDelisting || isDelistingConfirming || isUpdatingPrice || isUpdatingPriceConfirming || 
     isApproving || isApprovingConfirming || isApprovingNFT || isApprovingNFTConfirming ||
     buyStep !== 'idle' || listStep !== 'idle';
 
-  // Refresh status after operations complete
+  // Refresh status after operations complete (with duplicate prevention)
   useEffect(() => {
-    if (isBuyConfirmed) {
+    if (isBuyConfirmed && !buyNotificationShown.current) {
+      buyNotificationShown.current = true;
+      setBuyStep('idle'); // Reset buy step
       toastSuccess('Purchase completed successfully');
       if (onStatusChange) {
         setTimeout(() => {
@@ -78,18 +86,20 @@ export function ActionButtons({
         }, 2000);
       }
     }
-    if (isListConfirmed) {
-      toastSuccess('NFT listed successfully');
+    if (isListConfirmed && !listNotificationShown.current) {
+      listNotificationShown.current = true;
       setShowListModal(false);
       setListPrice('');
       setListStep('idle');
+      toastSuccess('NFT listed successfully');
       if (onStatusChange) {
         setTimeout(() => {
           onStatusChange();
         }, 2000);
       }
     }
-    if (isDelistConfirmed) {
+    if (isDelistConfirmed && !delistNotificationShown.current) {
+      delistNotificationShown.current = true;
       toastSuccess('NFT delisted successfully');
       if (onStatusChange) {
         setTimeout(() => {
@@ -97,10 +107,11 @@ export function ActionButtons({
         }, 2000);
       }
     }
-    if (isUpdatePriceConfirmed) {
-      toastSuccess('Price updated successfully');
+    if (isUpdatePriceConfirmed && !updatePriceNotificationShown.current) {
+      updatePriceNotificationShown.current = true;
       setShowPriceModal(false);
       setNewPrice('');
+      toastSuccess('Price updated successfully');
       if (onStatusChange) {
         setTimeout(() => {
           onStatusChange();
@@ -108,6 +119,31 @@ export function ActionButtons({
       }
     }
   }, [isBuyConfirmed, isListConfirmed, isDelistConfirmed, isUpdatePriceConfirmed, onStatusChange]);
+
+  // Reset notification flags when transaction states reset
+  useEffect(() => {
+    if (!isBuyConfirmed && !isBuying && !isBuyingConfirming) {
+      buyNotificationShown.current = false;
+    }
+  }, [isBuyConfirmed, isBuying, isBuyingConfirming]);
+
+  useEffect(() => {
+    if (!isListConfirmed && !isListing && !isListingConfirming) {
+      listNotificationShown.current = false;
+    }
+  }, [isListConfirmed, isListing, isListingConfirming]);
+
+  useEffect(() => {
+    if (!isDelistConfirmed && !isDelisting && !isDelistingConfirming) {
+      delistNotificationShown.current = false;
+    }
+  }, [isDelistConfirmed, isDelisting, isDelistingConfirming]);
+
+  useEffect(() => {
+    if (!isUpdatePriceConfirmed && !isUpdatingPrice && !isUpdatingPriceConfirming) {
+      updatePriceNotificationShown.current = false;
+    }
+  }, [isUpdatePriceConfirmed, isUpdatingPrice, isUpdatingPriceConfirming]);
 
   const handleBuy = async () => {
     if (!pairId) return;

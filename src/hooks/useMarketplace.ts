@@ -216,3 +216,16 @@ export function useTGRBalance(address?: Address) {
   return { balance, isLoading, error };
 }
 
+export function useTGRAllowance(owner?: Address, spender?: Address) {
+  const { data: allowance, isLoading, error, refetch } = useReadContract({
+    ...tgrContract,
+    functionName: 'allowance',
+    args: owner && spender ? [owner, spender] : undefined,
+    query: {
+      enabled: !!owner && !!spender,
+    },
+  });
+
+  return { allowance, isLoading, error, refetch };
+}
+

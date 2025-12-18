@@ -50,7 +50,7 @@ const nextConfig = {
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data: https: blob:; " +
         "font-src 'self' data:; " +
-        "connect-src 'self' https://*.web3modal.org https://*.walletconnect.org wss://*.walletconnect.org https://*.ipfs.io https://gateway.pinata.cloud https://gateway.lighthouse.storage https://api.thegraph.com wss://*.thegraph.com; " +
+        "connect-src 'self' https://*.web3modal.org https://*.walletconnect.org wss://*.walletconnect.org https://*.ipfs.io https://gateway.pinata.cloud https://gateway.lighthouse.storage https://api.thegraph.com https://api.studio.thegraph.com wss://*.thegraph.com https://api.avax.network https://*.avax.network wss://*.avax.network; " +
         "frame-src 'self' https://*.web3modal.org; " +
         "object-src 'none'; " +
         "base-uri 'self'; " +
@@ -63,7 +63,7 @@ const nextConfig = {
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data: https: blob:; " +
         "font-src 'self' data:; " +
-        "connect-src 'self' https://*.web3modal.org https://*.walletconnect.org wss://*.walletconnect.org https://*.ipfs.io https://gateway.pinata.cloud https://gateway.lighthouse.storage https://api.thegraph.com wss://*.thegraph.com; " +
+        "connect-src 'self' https://*.web3modal.org https://*.walletconnect.org wss://*.walletconnect.org https://*.ipfs.io https://gateway.pinata.cloud https://gateway.lighthouse.storage https://api.thegraph.com https://api.studio.thegraph.com wss://*.thegraph.com https://api.avax.network https://*.avax.network wss://*.avax.network; " +
         "frame-src 'self' https://*.web3modal.org; " +
         "object-src 'none'; " +
         "base-uri 'self'; " +

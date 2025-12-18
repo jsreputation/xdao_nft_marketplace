@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { forwardRef, useImperativeHandle, useEffect, useState, useMemo } from 'react';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { toastError, toastSuccess } from '@/lib/toast';
+import Link from 'next/link';
 
 interface OffersListProps {
   pairId: bigint;
@@ -75,6 +76,15 @@ export const OffersList = forwardRef<OffersListRef, OffersListProps>(({ pairId, 
       setCancellingOfferId(null);
     }
   }, [cancelError]);
+
+  const handleAcceptOffer = async (offerId: bigint) => {
+    try {
+      await acceptOffer(offerId);
+    } catch (err) {
+      console.error('Accept offer failed:', err);
+      toastError(err);
+    }
+  };
 
   const handleCancelOffer = async (offerId: bigint) => {
     setCancellingOfferId(offerId);
@@ -167,100 +177,107 @@ export const OffersList = forwardRef<OffersListRef, OffersListProps>(({ pairId, 
   }
 
   return (
-    <div className="bg-gray-800 rounded-xl shadow-md p-4 sm:p-6 border border-gray-700/50">
-      <h3 className="text-lg sm:text-xl font-bold mb-4 text-white">Offers ({offers.length})</h3>
+    <div className="bg-gray-800/50 dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 border border-gray-700/50">
+      <h3 className="text-lg sm:text-xl font-bold mb-6 text-white">Offers ({offers.length})</h3>
       
       {offers.length === 0 ? (
         <p className="text-gray-400 text-center py-8">No offers yet</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-700/50">
-                <th className="text-left py-3 px-4">
-                  <button
-                    onClick={() => handleSort('amount')}
-                    className="flex items-center text-sm font-semibold text-gray-300 hover:text-white transition-colors"
-                  >
-                    Amount
-                    <SortIcon field="amount" />
-                  </button>
-                </th>
-                <th className="text-left py-3 px-4">
-                  <button
-                    onClick={() => handleSort('offerer')}
-                    className="flex items-center text-sm font-semibold text-gray-300 hover:text-white transition-colors"
-                  >
-                    Offerer
-                    <SortIcon field="offerer" />
-                  </button>
-                </th>
-                <th className="text-left py-3 px-4">
-                  <button
-                    onClick={() => handleSort('timestamp')}
-                    className="flex items-center text-sm font-semibold text-gray-300 hover:text-white transition-colors"
-                  >
-                    Time
-                    <SortIcon field="timestamp" />
-                  </button>
-                </th>
-                <th className="text-right py-3 px-4">
-                  <span className="text-sm font-semibold text-gray-300">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedOffers.map((offer: any) => {
-                const isMyOffer = offer.offerer.toLowerCase() === address?.toLowerCase();
-                const timeAgo = formatDistanceToNow(new Date(Number(offer.timestamp) * 1000), {
-                  addSuffix: true,
-                });
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full divide-y divide-gray-700/50">
+              <thead className="bg-gray-700/30">
+                <tr>
+                  <th scope="col" className="px-4 sm:px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort('amount')}
+                      className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-300 hover:text-white transition-colors uppercase tracking-wider"
+                    >
+                      Amount
+                      <SortIcon field="amount" />
+                    </button>
+                  </th>
+                  <th scope="col" className="px-4 sm:px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort('offerer')}
+                      className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-300 hover:text-white transition-colors uppercase tracking-wider"
+                    >
+                      Owner
+                      <SortIcon field="offerer" />
+                    </button>
+                  </th>
+                  <th scope="col" className="px-4 sm:px-6 py-3 text-left">
+                    <button
+                      onClick={() => handleSort('timestamp')}
+                      className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-300 hover:text-white transition-colors uppercase tracking-wider"
+                    >
+                      Time
+                      <SortIcon field="timestamp" />
+                    </button>
+                  </th>
+                  <th scope="col" className="px-4 sm:px-6 py-3 text-right">
+                    <span className="text-xs sm:text-sm font-semibold text-gray-300 uppercase tracking-wider">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700/30">
+                {sortedOffers.map((offer: any) => {
+                  const isMyOffer = offer.offerer.toLowerCase() === address?.toLowerCase();
+                  const timeAgo = formatDistanceToNow(new Date(Number(offer.timestamp) * 1000), {
+                    addSuffix: true,
+                  });
 
-                return (
-                  <tr
-                    key={offer.id}
-                    className="border-b border-gray-700/30 hover:bg-gray-700/20 transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <span className="font-semibold text-base text-primary-400">
-                        {formatEther(offer.amount)} TGR
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-sm text-gray-300">
-                        {offer.offerer.slice(0, 6)}...{offer.offerer.slice(-4)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-sm text-gray-400">{timeAgo}</span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex justify-end gap-2">
-                        {isOwner && (
-                          <button
-                            onClick={() => acceptOffer(BigInt(offer.offerId))}
-                            disabled={isAccepting}
-                            className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  return (
+                    <tr
+                      key={offer.id}
+                      className="bg-gray-800/30 hover:bg-gray-700/30 transition-colors"
+                    >
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <span className="font-semibold text-base sm:text-lg text-white">
+                          {formatEther(offer.amount)} TGR
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <Link
+                            href={`/profile/${offer.offerer}`}
+                            className="font-mono text-sm text-gray-300 hover:text-primary-400 transition-colors cursor-pointer"
                           >
-                            {isAccepting ? 'Accepting...' : 'Accept'}
-                          </button>
-                        )}
-                        {isMyOffer && (
-                          <button
-                            onClick={() => handleCancelOffer(BigInt(offer.offerId))}
-                            disabled={isCancelling || cancellingOfferId === BigInt(offer.offerId)}
-                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                          >
-                            {(isCancelling && cancellingOfferId === BigInt(offer.offerId)) ? 'Cancelling...' : 'Cancel'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                            by {offer.offerer.slice(0, 6)}...{offer.offerer.slice(-4)}
+                          </Link>
+                        </div>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm text-gray-400">{timeAgo}</span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex justify-end gap-2">
+                          {isOwner && (
+                            <button
+                              onClick={() => handleAcceptOffer(BigInt(offer.offerId))}
+                              disabled={isAccepting || isCancelling}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
+                            >
+                              {isAccepting ? 'Accepting...' : 'Accept'}
+                            </button>
+                          )}
+                          {isMyOffer && (
+                            <button
+                              onClick={() => handleCancelOffer(BigInt(offer.offerId))}
+                              disabled={isCancelling || cancellingOfferId === BigInt(offer.offerId)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
+                            >
+                              {(isCancelling && cancellingOfferId === BigInt(offer.offerId)) ? 'Cancelling...' : 'Cancel'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

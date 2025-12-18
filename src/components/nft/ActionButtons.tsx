@@ -257,18 +257,50 @@ export function ActionButtons({
     }
   }, [listError, listStep]);
 
+  useEffect(() => {
+    if (updatePriceError) {
+      console.error('Update price error:', updatePriceError);
+      toastError(updatePriceError);
+    }
+  }, [updatePriceError]);
+
+  useEffect(() => {
+    if (delistError) {
+      console.error('Delist error:', delistError);
+      toastError(delistError);
+    }
+  }, [delistError]);
+
+  useEffect(() => {
+    if (buyError) {
+      console.error('Buy error:', buyError);
+      setBuyStep('idle');
+      toastError(buyError);
+    }
+  }, [buyError]);
+
   const handleUpdatePrice = async () => {
     if (!pairId || !newPrice) {
       toastWarning('Please enter a new price');
       return;
     }
-    updatePrice(pairId, newPrice);
+    try {
+      updatePrice(pairId, newPrice);
+    } catch (err) {
+      console.error('Update price failed:', err);
+      toastError(err);
+    }
     // Don't close modal immediately - wait for confirmation
   };
 
   const handleDelist = async () => {
     if (!pairId) return;
-    delist(pairId);
+    try {
+      delist(pairId);
+    } catch (err) {
+      console.error('Delist failed:', err);
+      toastError(err);
+    }
   };
 
   if (!address) {
@@ -336,17 +368,17 @@ export function ActionButtons({
         <div className="space-y-3">
           <button
             onClick={() => setShowPriceModal(true)}
-            disabled={isUpdatingPrice}
+            disabled={isUpdatingPrice || isUpdatingPriceConfirming}
             className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isUpdatingPrice ? 'Updating...' : 'Update Price'}
+            {isUpdatingPrice || isUpdatingPriceConfirming ? (isUpdatingPrice ? 'Waiting...' : 'Updating...') : 'Update Price'}
           </button>
           <button
             onClick={handleDelist}
-            disabled={isDelisting}
+            disabled={isDelisting || isDelistingConfirming}
             className="w-full bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isDelisting ? 'Delisting...' : 'Delist NFT'}
+            {isDelisting || isDelistingConfirming ? (isDelisting ? 'Waiting...' : 'Delisting...') : 'Delist NFT'}
           </button>
           <p className="text-xs text-gray-400 text-center mt-2">
             After delisting, you can create an auction from this page
@@ -359,10 +391,10 @@ export function ActionButtons({
         <div className="space-y-3">
           <button
             onClick={() => setShowListModal(true)}
-            disabled={isListing}
+            disabled={isListing || isListingConfirming}
             className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isListing ? 'Listing...' : 'List for Sale'}
+            {isListing || isListingConfirming ? (isListing ? 'Waiting...' : 'Listing...') : 'List for Sale'}
           </button>
           <button
             onClick={() => setShowAuctionModal(true)}
@@ -457,6 +489,13 @@ export function ActionButtons({
         >
           <div className="bg-gray-800 border border-gray-700/50 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold mb-4 text-white">Update Price</h3>
+            
+            {updatePriceError && (
+              <div className="bg-red-900/20 border border-red-800/50 rounded-lg p-3 mb-4 text-sm text-red-300">
+                Failed to update price. Please try again.
+              </div>
+            )}
+
             <input
               type="number"
               step="0.0001"

@@ -60,8 +60,6 @@ const cache = new InMemoryCache({
   },
   // Increase cache size for better performance
   resultCaching: true,
-  // Optimize memory usage
-  addTypename: true,
 });
 
 export const apolloClient = new ApolloClient({
@@ -81,6 +79,8 @@ export const apolloClient = new ApolloClient({
     },
   },
   // Performance: Only enable dev tools in development
-  connectToDevTools: process.env.NODE_ENV === 'development',
+  devtools: {
+    enabled: process.env.NODE_ENV === 'development',
+  },
 });
 

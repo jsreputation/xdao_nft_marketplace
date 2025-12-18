@@ -10,7 +10,7 @@ import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 export function CollectionForm() {
   const { address } = useAccount();
   const router = useRouter();
-  const { createCollection, isPending, isConfirmed } = useCreateCollection();
+  const { createCollection, isPending, isConfirmed, error: createError, isConfirming } = useCreateCollection();
   const { uploadMetadataFile, isUploading } = useIPFSUpload();
 
   const [formData, setFormData] = useState({
@@ -20,12 +20,29 @@ export function CollectionForm() {
     isPublic: true,
   });
 
+  // Handle create success
   useEffect(() => {
     if (isConfirmed) {
       toastSuccess('Collection created successfully');
-      router.push('/explore');
+      // Reset form
+      setFormData({
+        name: '',
+        description: '',
+        image: null,
+        isPublic: true,
+      });
+      setTimeout(() => {
+        router.push('/explore');
+      }, 1500);
     }
   }, [isConfirmed, router]);
+
+  // Handle create errors
+  useEffect(() => {
+    if (createError) {
+      toastError(createError);
+    }
+  }, [createError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +63,12 @@ export function CollectionForm() {
       const metadataURI = await uploadMetadataFile(metadata);
 
       // Create collection on contract
-      createCollection(formData.name, metadataURI, formData.isPublic);
+      try {
+        createCollection(formData.name, metadataURI, formData.isPublic);
+      } catch (error) {
+        console.error('Error calling createCollection:', error);
+        toastError(error);
+      }
     } catch (error) {
       console.error('Error creating collection:', error);
       toastError(error);
@@ -122,13 +144,13 @@ export function CollectionForm() {
 
         <button
           type="submit"
-          disabled={isPending || isUploading || !address}
-          className="w-full bg-gradient-to-r from-primary-500 to-purple-500 text-white px-6 py-3 sm:py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/50 transform hover:scale-[1.02] text-sm sm:text-base"
+          disabled={isPending || isConfirming || isUploading || !address}
+          className="w-full bg-gradient-to-r from-primary-500 to-purple-500 text-white px-6 py-3 sm:py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/50 transform hover:scale-[1.02] text-sm sm:text-base"
         >
           {isUploading
             ? 'Uploading to IPFS...'
-            : isPending
-            ? 'Creating Collection...'
+            : isPending || isConfirming
+            ? (isPending ? 'Waiting for confirmation...' : 'Creating Collection...')
             : 'Create Collection'}
         </button>
       </form>

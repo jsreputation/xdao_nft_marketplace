@@ -12,7 +12,7 @@ import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
 export function MintForm() {
   const { address } = useAccount();
   const router = useRouter();
-  const { mintNFT, isPending, isConfirmed } = useMintNFT();
+  const { mintNFT, isPending, isConfirmed, error: mintError, isConfirming } = useMintNFT();
   const { uploadNFTWithMetadata, isUploading } = useIPFSUpload();
   // Disable polling for mint form - use cached data
   const { data: collectionsData } = useCollections({ first: 100, skipPolling: true });
@@ -30,12 +30,31 @@ export function MintForm() {
 
   const collections = collectionsData?.collections || [];
 
+  // Handle mint success
   useEffect(() => {
     if (isConfirmed) {
       toastSuccess('NFT minted successfully');
-      router.push('/');
+      // Reset form
+      setFormData({
+        collection: '',
+        name: '',
+        description: '',
+        image: null,
+        royalty: 50,
+        attributes: [],
+      });
+      setTimeout(() => {
+        router.push('/explore');
+      }, 1500);
     }
   }, [isConfirmed, router]);
+
+  // Handle mint errors
+  useEffect(() => {
+    if (mintError) {
+      toastError(mintError);
+    }
+  }, [mintError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +85,12 @@ export function MintForm() {
       const { metadataURI } = await uploadNFTWithMetadata(formData.image, metadata);
 
       // Mint NFT
-      mintNFT(formData.collection as Address, metadataURI, formData.royalty);
+      try {
+        mintNFT(formData.collection as Address, metadataURI, formData.royalty);
+      } catch (error) {
+        console.error('Error calling mintNFT:', error);
+        toastError(error);
+      }
     } catch (error) {
       console.error('Error minting NFT:', error);
       toastError(error);
@@ -89,10 +113,6 @@ export function MintForm() {
       attributes: formData.attributes.filter((_, i) => i !== index),
     });
   };
-
-  if (isConfirmed) {
-    router.push('/explore');
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6">
@@ -232,13 +252,13 @@ export function MintForm() {
 
         <button
           type="submit"
-          disabled={isPending || isUploading || !address || !formData.collection}
-          className="w-full bg-gradient-to-r from-primary-500 to-purple-500 text-white px-6 py-3 sm:py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/50 transform hover:scale-[1.02] text-sm sm:text-base"
+          disabled={isPending || isConfirming || isUploading || !address || !formData.collection}
+          className="w-full bg-gradient-to-r from-primary-500 to-purple-500 text-white px-6 py-3 sm:py-4 rounded-xl font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/50 transform hover:scale-[1.02] text-sm sm:text-base"
         >
           {isUploading
             ? 'Uploading to IPFS...'
-            : isPending
-            ? 'Minting NFT...'
+            : isPending || isConfirming
+            ? (isPending ? 'Waiting for confirmation...' : 'Minting NFT...')
             : 'Mint NFT'}
         </button>
       </form>

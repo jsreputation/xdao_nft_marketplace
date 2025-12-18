@@ -63,3 +63,18 @@ export const GET_TRENDING_NFTS = gql`
   }
 `;
 
+export const GET_ITEMS_BY_COLLECTION = gql`
+  query GetItemsByCollection($collection: Bytes!, $first: Int, $skip: Int, $orderBy: Item_orderBy, $orderDirection: OrderDirection) {
+    items(where: { collection: $collection }, first: $first, skip: $skip, orderBy: $orderBy, orderDirection: $orderDirection) {
+      id
+      collection
+      tokenId
+      uri
+      creator
+      owner
+      royalty
+      timestamp
+    }
+  }
+`;
+

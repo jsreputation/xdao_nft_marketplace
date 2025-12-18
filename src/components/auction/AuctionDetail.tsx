@@ -8,6 +8,8 @@ import { BidsHistory } from './BidsHistory';
 import { PlaceBidButton } from './PlaceBidButton';
 import { useAccount } from 'wagmi';
 import { useFinalizeAuction } from '@/hooks/useAuction';
+import { toastError, toastSuccess } from '@/lib/toast';
+import { useEffect } from 'react';
 
 interface AuctionDetailProps {
   auctionId: string;
@@ -18,7 +20,26 @@ export function AuctionDetail({ auctionId, onBidSuccess }: AuctionDetailProps) {
   const { address } = useAccount();
   const { data, loading, error, refetch: refetchAuction } = useAuction(auctionId);
   const { refetch: refetchBids } = useAuctionBids(BigInt(auctionId));
-  const { finalizeAuction, isPending: isFinalizing } = useFinalizeAuction();
+  const { finalizeAuction, isPending: isFinalizing, isConfirming: isFinalizingConfirming, isConfirmed: isFinalized, error: finalizeError } = useFinalizeAuction();
+
+  // Handle finalize success
+  useEffect(() => {
+    if (isFinalized) {
+      toastSuccess('Auction finalized successfully');
+      // Refetch auction data
+      setTimeout(() => {
+        refetchAuction();
+        refetchBids();
+      }, 2000);
+    }
+  }, [isFinalized, refetchAuction, refetchBids]);
+
+  // Handle finalize errors
+  useEffect(() => {
+    if (finalizeError) {
+      toastError(finalizeError);
+    }
+  }, [finalizeError]);
 
   if (loading) {
     return (
@@ -96,11 +117,18 @@ export function AuctionDetail({ auctionId, onBidSuccess }: AuctionDetailProps) {
 
         {isEnded && isOwner && (
           <button
-            onClick={() => finalizeAuction(BigInt(auction.id))}
-            disabled={isFinalizing}
-            className="w-full bg-gradient-to-r from-primary-500 to-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 transition-all shadow-lg shadow-primary-500/40"
+            onClick={() => {
+              try {
+                finalizeAuction(BigInt(auction.id));
+              } catch (err) {
+                console.error('Finalize auction failed:', err);
+                toastError(err);
+              }
+            }}
+            disabled={isFinalizing || isFinalizingConfirming}
+            className="w-full bg-gradient-to-r from-primary-500 to-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-primary-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary-500/40"
           >
-            {isFinalizing ? 'Finalizing...' : 'Finalize Auction'}
+            {isFinalizing || isFinalizingConfirming ? (isFinalizing ? 'Waiting for confirmation...' : 'Finalizing...') : 'Finalize Auction'}
           </button>
         )}
       </div>

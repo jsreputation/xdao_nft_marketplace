@@ -7,6 +7,7 @@ import { useAccount } from 'wagmi';
 import { AUCTION_ADDRESS } from '@/lib/contracts';
 import { Address } from 'viem';
 import { toastError, toastSuccess, toastWarning } from '@/lib/toast';
+import { LoadingOverlay } from '@/components/common/LoadingSpinner';
 
 interface CreateAuctionModalProps {
   collection: Address;
@@ -129,7 +130,20 @@ export function CreateAuctionModal({ collection, tokenId, onClose, onStatusChang
   const isProcessing = isApprovingPending || isApprovingConfirming || isCreatingPending || isCreatingConfirming;
 
   return (
-    <div 
+    <>
+      {/* Loading overlay during processing */}
+      {isProcessing && (
+        <LoadingOverlay
+          text={
+            step === 'approve' && (isApprovingPending || isApprovingConfirming)
+              ? (isApprovingPending ? 'Waiting for approval...' : 'Approving NFT...')
+              : step === 'create' && (isCreatingPending || isCreatingConfirming)
+              ? (isCreatingPending ? 'Waiting for confirmation...' : 'Creating auction...')
+              : 'Processing...'
+          }
+        />
+      )}
+      <div 
       className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isProcessing) {
@@ -213,6 +227,7 @@ export function CreateAuctionModal({ collection, tokenId, onClose, onStatusChang
         </form>
       </div>
     </div>
+    </>
   );
 }
 

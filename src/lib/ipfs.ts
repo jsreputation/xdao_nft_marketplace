@@ -16,6 +16,10 @@ export interface CollectionMetadata {
   description: string;
   image: string;
   external_link?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string | number;
+  }>;
 }
 
 /**
@@ -139,14 +143,43 @@ export function ipfsToGateway(ipfsURI: string): string {
  * Fetch metadata from IPFS
  */
 export async function fetchMetadata(ipfsURI: string): Promise<NFTMetadata | CollectionMetadata> {
+  if (!ipfsURI || ipfsURI.trim() === '') {
+    throw new Error('IPFS URI is empty');
+  }
+
   const url = ipfsToGateway(ipfsURI);
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('fetchMetadata - Converting URI:', ipfsURI, 'to URL:', url);
+  }
+  
   const response = await fetch(url);
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch metadata: ${response.statusText}`);
+    throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
   }
   
-  return response.json();
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('fetchMetadata - Response is not JSON. Content-Type:', contentType, 'First 200 chars:', text.substring(0, 200));
+    }
+    // Try to parse as JSON anyway
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      throw new Error(`Failed to parse metadata: Response is not valid JSON`);
+    }
+  }
+  
+  const data = await response.json();
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('fetchMetadata - Successfully fetched and parsed metadata:', data);
+  }
+  
+  return data;
 }
 
 /**

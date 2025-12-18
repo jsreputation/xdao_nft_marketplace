@@ -99,12 +99,20 @@ export function useIPFSMetadata(ipfsURI?: string) {
 
   useEffect(() => {
     // Only load if we have a URI and haven't loaded it yet
-    if (!ipfsURI) {
+    if (!ipfsURI || ipfsURI.trim() === '') {
+      setMetadata(null);
+      setIsLoading(false);
+      setError(null);
       return;
     }
 
-    // Skip if already loaded or currently loading
-    if (hasLoadedRef.current === ipfsURI || isLoadingRef.current) {
+    // Skip if already loaded for this URI
+    if (hasLoadedRef.current === ipfsURI) {
+      return;
+    }
+
+    // Skip if currently loading
+    if (isLoadingRef.current) {
       return;
     }
 
@@ -113,17 +121,29 @@ export function useIPFSMetadata(ipfsURI?: string) {
     
     setIsLoading(true);
     setError(null);
-    hasLoadedRef.current = ipfsURI;
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('useIPFSMetadata - Fetching metadata for URI:', ipfsURI);
+    }
     
     fetchMetadata(ipfsURI)
       .then((data) => {
         if (!cancelled) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('useIPFSMetadata - Metadata fetched successfully:', data);
+          }
           setMetadata(data);
+          hasLoadedRef.current = ipfsURI;
         }
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err : new Error('Failed to load metadata'));
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load metadata';
+          if (process.env.NODE_ENV === 'development') {
+            console.error('useIPFSMetadata - Error fetching metadata:', errorMessage, err);
+          }
+          setError(err instanceof Error ? err : new Error(errorMessage));
           hasLoadedRef.current = null; // Reset on error so we can retry
         }
       })

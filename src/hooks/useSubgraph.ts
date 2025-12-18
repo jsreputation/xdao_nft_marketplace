@@ -10,6 +10,7 @@ import {
   GET_NFTS,
   GET_NFT_DETAILS,
   GET_TRENDING_NFTS,
+  GET_ITEMS_BY_COLLECTION,
 } from '@/graphql/queries/nfts';
 import {
   GET_AUCTIONS,
@@ -234,6 +235,27 @@ export function useUserCollections(owner: Address, first?: number, skip?: number
     variables: { owner: owner.toLowerCase(), first, skip },
     pollInterval: skipPolling ? 0 : 120000, // Poll every 2 minutes
     errorPolicy: 'all',
+  });
+}
+
+export function useItemsByCollection(variables?: {
+  collection: Address;
+  first?: number;
+  skip?: number;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
+  skipPolling?: boolean;
+}) {
+  return useQuery(GET_ITEMS_BY_COLLECTION, {
+    variables: variables ? {
+      ...variables,
+      collection: variables.collection.toLowerCase(),
+    } : undefined,
+    skip: !variables?.collection,
+    pollInterval: variables?.skipPolling ? 0 : 180000, // Poll every 3 minutes
+    errorPolicy: 'all',
+    fetchPolicy: 'cache-first',
+    nextFetchPolicy: 'cache-first',
   });
 }
 

@@ -14,10 +14,10 @@ interface CollectionTopNFTsProps {
 }
 
 export function CollectionTopNFTs({ collection, limit = 8 }: CollectionTopNFTsProps) {
+  // Get all NFTs in collection, not just listed ones
   const { data, loading, error } = useNFTs({
     where: {
       collection: collection.toLowerCase(),
-      bValid: true,
     },
     orderBy: 'price',
     orderDirection: 'asc',
@@ -27,8 +27,13 @@ export function CollectionTopNFTs({ collection, limit = 8 }: CollectionTopNFTsPr
 
   const topNFTs = useMemo(() => {
     const pairs = data?.pairs || [];
+    
+    // If we have listed NFTs, prioritize those
+    const listedNFTs = pairs.filter((p: any) => p.bValid && p.price);
+    const unlistedNFTs = pairs.filter((p: any) => !p.bValid);
+    
     // Get NFTs with highest prices (current listings)
-    const sortedByPrice = [...pairs]
+    const sortedByPrice = [...listedNFTs]
       .sort((a: any, b: any) => {
         const priceA = BigInt(a.price || '0');
         const priceB = BigInt(b.price || '0');
@@ -46,9 +51,18 @@ export function CollectionTopNFTs({ collection, limit = 8 }: CollectionTopNFTsPr
       })
       .slice(0, limit);
 
-    // Combine and deduplicate
-    const combined = [...sortedByPrice, ...sortedBySalePrice];
-    const unique = combined.filter((pair, index, self) =>
+    // If we have enough listed/sold NFTs, use those
+    if (sortedByPrice.length + sortedBySalePrice.length >= limit) {
+      const combined = [...sortedByPrice, ...sortedBySalePrice];
+      const unique = combined.filter((pair, index, self) =>
+        index === self.findIndex((p) => p.collection === pair.collection && p.tokenId === pair.tokenId)
+      );
+      return unique.slice(0, limit);
+    }
+
+    // Otherwise, include unlisted NFTs to fill the gap
+    const allNFTs = [...sortedByPrice, ...sortedBySalePrice, ...unlistedNFTs];
+    const unique = allNFTs.filter((pair, index, self) =>
       index === self.findIndex((p) => p.collection === pair.collection && p.tokenId === pair.tokenId)
     );
 

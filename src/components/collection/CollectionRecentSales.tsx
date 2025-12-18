@@ -4,6 +4,7 @@ import { useEvents } from '@/hooks/useSubgraph';
 import { Address, formatEther } from 'viem';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useNFTDetails } from '@/hooks/useSubgraph';
 import { useIPFSMetadata } from '@/hooks/useIPFS';
 import { IPFSImage } from '@/components/common/IPFSImage';
@@ -111,19 +112,36 @@ function SaleItem({
   timestamp: string;
   txhash: string;
 }) {
+  const router = useRouter();
   const { data: nftData } = useNFTDetails(collection, tokenId);
   const item = nftData?.items?.[0];
-  const { metadata, getImageUrl } = useIPFSMetadata(item?.uri);
+  const { metadata, getImageUrl } = useIPFSMetadata(item?.uri || '');
   const imageUrl = metadata?.image ? getImageUrl(metadata.image) : '';
 
   const timeAgo = formatDistanceToNow(new Date(Number(timestamp) * 1000), {
     addSuffix: true,
   });
 
+  const handleItemClick = () => {
+    router.push(`/nft/${collection}/${tokenId}`);
+  };
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/profile/${to}`);
+  };
+
+  const handleTxClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.open(`https://snowtrace.io/tx/${txhash}`, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <Link
-      href={`/nft/${collection}/${tokenId}`}
-      className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all duration-200 hover:shadow-md group"
+    <div
+      onClick={handleItemClick}
+      className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all duration-200 hover:shadow-md group cursor-pointer"
     >
       {/* NFT Image */}
       <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
@@ -152,13 +170,13 @@ function SaleItem({
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
           <span className="font-mono">{from.slice(0, 6)}...{from.slice(-4)}</span>
           <span>→</span>
-          <Link
-            href={`/profile/${to}`}
-            onClick={(e) => e.stopPropagation()}
-            className="font-mono hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+          <button
+            type="button"
+            onClick={handleProfileClick}
+            className="font-mono hover:text-primary-600 dark:hover:text-primary-400 transition-colors cursor-pointer"
           >
             {to.slice(0, 6)}...{to.slice(-4)}
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -168,17 +186,15 @@ function SaleItem({
           {formatEther(typeof price === 'string' ? BigInt(price) : price)} TGR
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">{timeAgo}</p>
-        <Link
-          href={`https://snowtrace.io/tx/${txhash}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
+        <button
+          type="button"
+          onClick={handleTxClick}
           className="text-xs text-primary-600 dark:text-primary-400 hover:underline mt-1 inline-block"
         >
           View TX
-        </Link>
+        </button>
       </div>
-    </Link>
+    </div>
   );
 }
 
